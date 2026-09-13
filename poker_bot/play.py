@@ -91,8 +91,10 @@ def _play_one_hand(policy_net, rng, session_net, choose_index=_prompt_for_action
 
     print(f"\n--- Result | final board: {_cards_str(state.board)} ---")
     if state.folded_player is not None:
-        winner = "You" if state.folded_player == BOT else "Bot"
-        print(f"{'Bot' if state.folded_player == BOT else 'You'} folded. {winner} win{'s' if winner == 'Bot' else ''} the pot.")
+        if state.folded_player == HUMAN:
+            print("You folded. Bot wins the pot.")
+        else:
+            print("Bot folded. You win the pot.")
     else:
         your_hand = evaluate_hand(list(state.hole[HUMAN]) + state.full_board)
         bot_hand = evaluate_hand(list(state.hole[BOT]) + state.full_board)
