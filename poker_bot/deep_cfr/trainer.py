@@ -92,9 +92,19 @@ def _traverse(state, traverser: int, advantage_nets, advantage_memory,
                                          strategy_memory, cfr_iteration, rng, equity_rollouts, equity_cache)
         node_value = float(np.dot(strategy, action_utils))
 
+        # Normalize by this player's starting stack before storing: a
+        # fold-vs-shove decision can swing the whole stack while a small
+        # mid-street decision swings a tiny fraction of it. Training one
+        # shared network on raw chip-unit regrets lets the rare huge-swing
+        # examples dominate the loss and drown out the hand-strength
+        # signal on everything else. Normalizing puts every example on a
+        # comparable scale; it doesn't change the regret-matching ratios
+        # (that's scale-invariant), only how evenly the network fits
+        # across different decision points.
+        starting_stack = state.stacks[player] + state.total_contrib[player]
         regret_target = np.zeros(NUM_CANONICAL_ACTIONS, dtype=np.float32)
         for i, action in enumerate(actions):
-            regret_target[CANONICAL_INDEX[action]] = action_utils[i] - node_value
+            regret_target[CANONICAL_INDEX[action]] = (action_utils[i] - node_value) / starting_stack
         advantage_memory[traverser].add((features, regret_target, mask.copy(), float(cfr_iteration)))
         return node_value
 
