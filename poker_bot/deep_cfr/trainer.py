@@ -159,6 +159,18 @@ def train(num_cfr_iterations: int = 5, traversals_per_player_per_iteration: int 
     return advantage_nets, policy_net, advantage_memory, strategy_memory
 
 
+def save_policy_net(policy_net, hidden_dim: int, path: str) -> None:
+    torch.save({"hidden_dim": hidden_dim, "state_dict": policy_net.state_dict()}, path)
+
+
+def load_policy_net(path: str):
+    checkpoint = torch.load(path, weights_only=True)
+    policy_net = InfosetMLP(checkpoint["hidden_dim"])
+    policy_net.load_state_dict(checkpoint["state_dict"])
+    policy_net.eval()
+    return policy_net
+
+
 def policy_strategy(policy_net, state, player: int, rng: random.Random,
                      equity_rollouts: int = 100) -> dict:
     """The trained policy network's strategy at `state`, as a dict of

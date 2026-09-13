@@ -49,8 +49,12 @@ solver, with Deep CFR as a later stage once tabular CFR stops scaling.
       direct input feature, and generalizes across info sets instead of
       needing individual visits -- this is what actually fixes Stage 4's
       scaling wall, and is the RL-flavored piece of this project.
-- [ ] **Stage 6** - Evaluation: exploitability/best-response estimates,
-      play-vs-bot CLI
+- [x] **Stage 6a** - play-vs-bot CLI (`poker_bot/play.py`): real hands
+      against a trained Deep CFR policy network, with the bot's live
+      strategy probabilities shown at each decision
+- [ ] **Stage 6b** - exploitability / best-response estimates for the
+      trained bot (approximate, since exact best response is
+      intractable on full HUNL even abstracted)
 
 ## Setup
 
@@ -65,6 +69,13 @@ pip install -r requirements.txt
 ```bash
 python3 -m pytest            # fast tests
 python3 -m pytest --runslow  # also runs the exhaustive evaluator check
+```
+
+## Playing against the bot
+
+```bash
+python3 -m poker_bot.train_bot   # trains a bot, ~2 minutes, saves to poker_bot/models/
+python3 -m poker_bot.play        # play heads-up against it in the terminal
 ```
 
 ## Package layout
@@ -88,4 +99,6 @@ poker_bot/
     trainer.py        # Deep CFR training loop
   games/
     kuhn.py         # Kuhn Poker + vanilla CFR (equilibrium sanity check)
+  train_bot.py      # trains a Deep CFR bot and saves its policy network
+  play.py           # interactive CLI: play heads-up against the trained bot
 ```
