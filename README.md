@@ -39,10 +39,16 @@ solver, with Deep CFR as a later stage once tabular CFR stops scaling.
       ~10 hands/sec single-threaded Python, meaning most info sets get
       almost no visits. This is the standard wall real poker-AI work
       hits, and is exactly why Stage 5 (Deep CFR) exists.
-- [ ] **Stage 5** - Deep CFR (neural function approximation replacing
-      tabular regret/strategy tables) -- generalizes across info sets
-      instead of needing to visit each one individually, and is the
-      RL-flavored piece of this project
+- [x] **Stage 5** - Deep CFR (Brown et al. 2019): two small PyTorch MLPs
+      per training run (an advantage network per player, predicting
+      counterfactual regret from a fixed-size info-set feature vector,
+      plus a policy network for the final average strategy), trained
+      via reservoir-buffered samples collected from the same
+      external-sampling traversal structure as Stage 4. Replaces
+      discrete hand buckets with continuous Monte Carlo equity as a
+      direct input feature, and generalizes across info sets instead of
+      needing individual visits -- this is what actually fixes Stage 4's
+      scaling wall, and is the RL-flavored piece of this project.
 - [ ] **Stage 6** - Evaluation: exploitability/best-response estimates,
       play-vs-bot CLI
 
@@ -74,7 +80,12 @@ poker_bot/
     game.py         # heads-up No-Limit Hold'em betting state machine
   abstraction/
     equity.py       # Monte Carlo hand-equity estimation
-    buckets.py       # hand-strength percentile bucketing (card abstraction)
+    buckets.py      # hand-strength percentile bucketing (tabular card abstraction)
+  deep_cfr/
+    features.py     # fixed-size info-set feature encoding for the neural nets
+    networks.py      # advantage/policy network architecture (shared MLP)
+    memory.py        # reservoir-sampling buffer
+    trainer.py        # Deep CFR training loop
   games/
     kuhn.py         # Kuhn Poker + vanilla CFR (equilibrium sanity check)
 ```
