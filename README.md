@@ -12,8 +12,11 @@ solver, with Deep CFR as a later stage once tabular CFR stops scaling.
 | Players | 2 (heads-up) |
 | Core algorithm | CFR family (vanilla CFR -> CFR+ -> Deep CFR) |
 | Bet sizing | Discrete pot-fraction buckets: fold, check/call, 33%/75%/150% pot, all-in |
+| Raises per street | Capped at 3 (unbounded No-Limit raise wars make exhaustive-action CFR intractable regardless of card abstraction) |
 | Hand evaluator | Built from scratch, with human-readable descriptions |
 | Stack model | Reset to a fresh 100bb every hand (no persistent bankroll) |
+| Card abstraction | Hand-strength percentile buckets from Monte Carlo equity |
+| CFR variant | External-sampling Monte Carlo CFR (vanilla CFR's exhaustive traversal is intractable on real No-Limit betting trees) |
 
 ## Roadmap / stages
 
@@ -25,12 +28,21 @@ solver, with Deep CFR as a later stage once tabular CFR stops scaling.
 - [x] **Stage 2** - heads-up No-Limit Hold'em betting engine: blinds,
       position rules, pot-fraction bet sizing, min-raise legality,
       all-in-for-less refunds, street/showdown transitions
-- [ ] **Stage 3** - information-set abstraction for CFR on full HUNL
-      (card bucketing; the raw game is too large for tabular CFR as-is)
-- [ ] **Stage 4** - CFR+ / Monte Carlo CFR training loop on the abstracted
-      game
+- [x] **Stage 3** - hand-strength percentile bucketing (Monte Carlo
+      equity-based card abstraction)
+- [x] **Stage 4** - external-sampling Monte Carlo CFR training loop,
+      wired to the real engine/evaluator/bucketer. Works correctly
+      (validated qualitatively: stronger hands learn to fold less and
+      raise more), but tabular CFR alone does not scale well here --
+      even with only 6 hand-strength buckets, the number of distinct
+      information sets exploded past 200,000 within 3,000 hands at
+      ~10 hands/sec single-threaded Python, meaning most info sets get
+      almost no visits. This is the standard wall real poker-AI work
+      hits, and is exactly why Stage 5 (Deep CFR) exists.
 - [ ] **Stage 5** - Deep CFR (neural function approximation replacing
-      tabular regret/strategy tables) for RL-scale training
+      tabular regret/strategy tables) -- generalizes across info sets
+      instead of needing to visit each one individually, and is the
+      RL-flavored piece of this project
 - [ ] **Stage 6** - Evaluation: exploitability/best-response estimates,
       play-vs-bot CLI
 
@@ -54,11 +66,15 @@ python3 -m pytest --runslow  # also runs the exhaustive evaluator check
 ```
 poker_bot/
   cfr/
-    node.py       # regret-matching info-set node, reused across games
+    node.py         # regret-matching info-set node, reused across games
+    hunl_trainer.py # external-sampling MCCFR self-play on full HUNL
   engine/
-    card.py       # Card, Deck
-    evaluator.py  # from-scratch 5-7 card hand evaluator
-    game.py       # heads-up No-Limit Hold'em betting state machine
+    card.py         # Card, Deck
+    evaluator.py    # from-scratch 5-7 card hand evaluator
+    game.py         # heads-up No-Limit Hold'em betting state machine
+  abstraction/
+    equity.py       # Monte Carlo hand-equity estimation
+    buckets.py       # hand-strength percentile bucketing (card abstraction)
   games/
-    kuhn.py       # Kuhn Poker + vanilla CFR (equilibrium sanity check)
+    kuhn.py         # Kuhn Poker + vanilla CFR (equilibrium sanity check)
 ```

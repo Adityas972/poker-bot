@@ -15,6 +15,13 @@ Conventions
   calling), ALLIN. Pot-fraction sizes are clamped to the legal min-raise
   and to the acting player's stack, and deduplicated when two fractions
   clamp to the same amount.
+- Raises per street are capped at MAX_RAISES_PER_STREET. Real casino
+  No-Limit rules have no such cap, but every practical poker-AI
+  abstraction (and commercial solvers like PioSolver) caps raise depth
+  per street -- without it, the betting tree is unbounded (a 100bb stack
+  supports many successive pot-sized re-raises before an all-in), which
+  makes exhaustive-action CFR traversal intractable regardless of card
+  abstraction.
 """
 
 from dataclasses import dataclass, field
@@ -24,6 +31,7 @@ from poker_bot.engine.card import Deck
 from poker_bot.engine.evaluator import evaluate_hand
 
 BET_FRACTIONS = [("BET_33", 0.33), ("BET_75", 0.75), ("BET_150", 1.5)]
+MAX_RAISES_PER_STREET = 3
 
 
 class Street(IntEnum):
@@ -52,6 +60,7 @@ class HandState:
     folded_player: int = None
     showdown_done: bool = False
     aggressor_acted_this_street: bool = False
+    raises_this_street: int = 0
 
     @property
     def board(self):
@@ -129,7 +138,7 @@ def legal_actions(state: HandState):
 
     call_amt = min(to_call, stack)
     remaining_after_call = stack - call_amt
-    if remaining_after_call > 0:
+    if remaining_after_call > 0 and state.raises_this_street < MAX_RAISES_PER_STREET:
         by_amount = {}
         for label, fraction in BET_FRACTIONS:
             pot_after_call = pot + call_amt
@@ -179,6 +188,7 @@ def _advance_street_or_showdown(state: HandState):
     state.num_actions_this_street = 0
     state.last_raise_increment = state.big_blind
     state.aggressor_acted_this_street = False
+    state.raises_this_street = 0
     state.to_act = 1  # big blind acts first on every street after preflop
 
     if any(s == 0 for s in state.stacks):
@@ -216,6 +226,7 @@ def apply_action(state: HandState, action: str) -> None:
         raise_increment = new_contrib - state.street_contrib[opponent]
         state.last_raise_increment = max(raise_increment, state.last_raise_increment)
         state.aggressor_acted_this_street = True
+        state.raises_this_street += 1
     elif committed < to_call_before:
         # Short all-in call: refund the uncalled portion of the opponent's bet.
         refund = to_call_before - committed
