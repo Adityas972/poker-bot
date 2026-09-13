@@ -24,15 +24,24 @@ from poker_bot.train_bot import MODEL_PATH
 app = Flask(__name__)
 
 _policy_net = None
+_policy_net_mtime = None
 _state = None
 _rng = random.Random()
 _session_net = [0, 0]
 
 
 def _get_policy_net():
-    global _policy_net
-    if _policy_net is None and MODEL_PATH.exists():
+    """Loads the policy network, and reloads it if the file on disk has
+    changed since it was last loaded (e.g. a retrain finished) -- a
+    long-running server process would otherwise keep serving whatever
+    model happened to be loaded first, silently ignoring retrains."""
+    global _policy_net, _policy_net_mtime
+    if not MODEL_PATH.exists():
+        return None
+    mtime = MODEL_PATH.stat().st_mtime
+    if _policy_net is None or mtime != _policy_net_mtime:
         _policy_net = load_policy_net(str(MODEL_PATH))
+        _policy_net_mtime = mtime
     return _policy_net
 
 

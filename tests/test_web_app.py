@@ -1,14 +1,19 @@
+import os
+
 import pytest
 
 import poker_bot.web.app as web_app
 from poker_bot.deep_cfr.networks import InfosetMLP
+from poker_bot.deep_cfr.trainer import save_policy_net
 
 
 @pytest.fixture
 def client(monkeypatch):
     # Use an untrained (random-weight) network so tests don't depend on a
-    # real trained model file existing on disk.
-    monkeypatch.setattr(web_app, "_policy_net", InfosetMLP(hidden_dim=8))
+    # real trained model file existing on disk, and bypass the on-disk
+    # reload check entirely (that's exercised separately below).
+    fake_net = InfosetMLP(hidden_dim=8)
+    monkeypatch.setattr(web_app, "_get_policy_net", lambda: fake_net)
     monkeypatch.setattr(web_app, "_state", None)
     monkeypatch.setattr(web_app, "_session_net", [0, 0])
     web_app.app.config["TESTING"] = True
@@ -54,6 +59,27 @@ def test_folding_ends_hand_and_updates_session_score(client):
     assert data["outcome"] == "you_folded"
     assert data["net"]["you"] == -50  # lost the small blind
     assert data["session_net"]["you"] == -50
+
+
+def test_get_policy_net_reloads_when_file_changes_on_disk(tmp_path, monkeypatch):
+    """Regression test: a long-running server used to cache the policy
+    network forever, silently ignoring a retrain that finished later --
+    _get_policy_net must notice the file's mtime changed and reload."""
+    model_path = tmp_path / "policy_net.pt"
+    monkeypatch.setattr(web_app, "MODEL_PATH", model_path)
+    monkeypatch.setattr(web_app, "_policy_net", None)
+    monkeypatch.setattr(web_app, "_policy_net_mtime", None)
+
+    save_policy_net(InfosetMLP(hidden_dim=8), 8, str(model_path))
+    os.utime(model_path, (1_000_000_000, 1_000_000_000))
+    first = web_app._get_policy_net()
+    again = web_app._get_policy_net()
+    assert again is first  # unchanged file -> served from cache
+
+    save_policy_net(InfosetMLP(hidden_dim=8), 8, str(model_path))
+    os.utime(model_path, (2_000_000_000, 2_000_000_000))  # simulates a later retrain
+    after_retrain = web_app._get_policy_net()
+    assert after_retrain is not first  # changed file -> reloaded
 
 
 def test_playing_to_showdown_reveals_both_hands(client):
