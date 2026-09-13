@@ -1,9 +1,8 @@
 # poker-bot
 
-A poker-playing agent built from scratch, following the classical poker-AI
-research path (Kuhn -> Leduc -> Libratus/DeepStack-style heads-up No-Limit
-Hold'em), using Counterfactual Regret Minimization (CFR) as the core solver,
-with Deep CFR as a later stage once tabular CFR stops scaling.
+A poker-playing agent built from scratch for heads-up No-Limit Texas
+Hold'em, using Counterfactual Regret Minimization (CFR) as the core
+solver, with Deep CFR as a later stage once tabular CFR stops scaling.
 
 ## Decisions locked in
 
@@ -12,24 +11,28 @@ with Deep CFR as a later stage once tabular CFR stops scaling.
 | Variant | Heads-up No-Limit Texas Hold'em |
 | Players | 2 (heads-up) |
 | Core algorithm | CFR family (vanilla CFR -> CFR+ -> Deep CFR) |
-| Bet sizing | Discrete pot-fraction buckets |
-| Hand evaluator | Built from scratch |
-| Stack depth (final game) | 100 big blinds |
-| Curriculum | Kuhn Poker -> Leduc Hold'em -> full HUNL |
+| Bet sizing | Discrete pot-fraction buckets: fold, check/call, 33%/75%/150% pot, all-in |
+| Hand evaluator | Built from scratch, with human-readable descriptions |
+| Stack model | Reset to a fresh 100bb every hand (no persistent bankroll) |
 
 ## Roadmap / stages
 
-- [x] **Stage 0** - project scaffolding
-- [ ] **Stage 1** - Kuhn Poker + vanilla CFR (verify convergence to the known
-      closed-form Nash equilibrium)
-- [ ] **Stage 2** - Leduc Hold'em + CFR (adds a betting round, a community
-      card, and a real (if tiny) card abstraction problem)
-- [ ] **Stage 3** - Heads-up No-Limit Hold'em engine (deck, hand evaluator,
-      betting engine, discrete bet-size action abstraction)
-- [ ] **Stage 4** - CFR+ / Monte Carlo CFR on abstracted HUNL
+- [x] **Stage 0** - project scaffolding, CFR regret-matching node
+      (validated on Kuhn Poker against its known closed-form Nash
+      equilibrium, in `poker_bot/games/kuhn.py`)
+- [x] **Stage 1** - card/deck primitives + from-scratch hand evaluator
+      (verified exactly against the textbook 5-card hand frequency table)
+- [x] **Stage 2** - heads-up No-Limit Hold'em betting engine: blinds,
+      position rules, pot-fraction bet sizing, min-raise legality,
+      all-in-for-less refunds, street/showdown transitions
+- [ ] **Stage 3** - information-set abstraction for CFR on full HUNL
+      (card bucketing; the raw game is too large for tabular CFR as-is)
+- [ ] **Stage 4** - CFR+ / Monte Carlo CFR training loop on the abstracted
+      game
 - [ ] **Stage 5** - Deep CFR (neural function approximation replacing
-      tabular regret/strategy tables)
-- [ ] **Stage 6** - Evaluation: exploitability estimates, play vs bot via CLI
+      tabular regret/strategy tables) for RL-scale training
+- [ ] **Stage 6** - Evaluation: exploitability/best-response estimates,
+      play-vs-bot CLI
 
 ## Setup
 
@@ -39,12 +42,23 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Running Stage 1 (Kuhn Poker)
+## Running tests
 
 ```bash
-python3 -m poker_bot.games.kuhn
+python3 -m pytest            # fast tests
+python3 -m pytest --runslow  # also runs the exhaustive evaluator check
 ```
 
-This runs vanilla CFR self-play for N iterations and prints the learned
-average strategy per information set, plus the average game value for
-player 0 (should converge close to the known equilibrium value of -1/18).
+## Package layout
+
+```
+poker_bot/
+  cfr/
+    node.py       # regret-matching info-set node, reused across games
+  engine/
+    card.py       # Card, Deck
+    evaluator.py  # from-scratch 5-7 card hand evaluator
+    game.py       # heads-up No-Limit Hold'em betting state machine
+  games/
+    kuhn.py       # Kuhn Poker + vanilla CFR (equilibrium sanity check)
+```
