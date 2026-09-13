@@ -75,8 +75,17 @@ python3 -m pytest --runslow  # also runs the exhaustive evaluator check
 
 ```bash
 python3 -m poker_bot.train_bot   # trains a bot, ~2 minutes, saves to poker_bot/models/
+
 python3 -m poker_bot.play        # play heads-up against it in the terminal
+# or, for a browser UI:
+python3 -m poker_bot.web.app     # then open http://127.0.0.1:5050
 ```
+
+The web UI shows a real poker table (your cards always visible, the
+bot's revealed only at showdown), clickable action buttons sized from
+the actual legal actions at each decision, and a live "bot's reasoning"
+panel showing the strategy probabilities the bot considered before each
+of its moves.
 
 ## Package layout
 
@@ -101,4 +110,8 @@ poker_bot/
     kuhn.py         # Kuhn Poker + vanilla CFR (equilibrium sanity check)
   train_bot.py      # trains a Deep CFR bot and saves its policy network
   play.py           # interactive CLI: play heads-up against the trained bot
+  web/
+    app.py           # Flask API + page routes for the browser UI
+    templates/index.html
+    static/style.css, app.js
 ```

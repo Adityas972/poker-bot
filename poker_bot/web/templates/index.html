@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heads-Up vs Deep CFR Bot</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Heads-Up No-Limit Hold'em <span class="sub">vs. your Deep CFR bot</span></h1>
+    <div id="session-score" class="session-score">Session: you +0 · bot +0</div>
+  </header>
+
+  <main>
+    <div id="error-banner" class="error-banner" hidden></div>
+
+    <section class="table">
+      <div class="opponent-row">
+        <div class="stack-label">Bot <span id="bot-stack">10000</span></div>
+        <div id="bot-cards" class="cards"></div>
+      </div>
+
+      <div class="board-row">
+        <div class="pot-label">Pot: <span id="pot">0</span></div>
+        <div id="board-cards" class="cards board"></div>
+        <div id="street-label" class="street-label"></div>
+      </div>
+
+      <div class="player-row">
+        <div id="your-cards" class="cards"></div>
+        <div class="stack-label">You <span id="your-stack">10000</span></div>
+      </div>
+    </section>
+
+    <section id="result-panel" class="result-panel" hidden>
+      <p id="result-text"></p>
+      <button id="new-hand-btn" class="primary">Deal next hand</button>
+    </section>
+
+    <section id="action-panel" class="action-panel" hidden>
+      <p class="prompt">Your turn</p>
+      <div id="action-buttons" class="action-buttons"></div>
+    </section>
+
+    <section id="start-panel" class="start-panel">
+      <button id="start-btn" class="primary">Deal first hand</button>
+    </section>
+
+    <section class="bot-log-panel">
+      <h2>Bot's reasoning</h2>
+      <div id="bot-log"></div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
