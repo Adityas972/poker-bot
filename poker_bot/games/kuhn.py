@@ -1,19 +1,16 @@
 """Kuhn Poker: the smallest nontrivial poker game, used to sanity-check CFR.
 
-Rules
------
-- 3 cards: J, Q, K (one each). 2 players, each antes 1 chip, each dealt 1 card.
-- A single betting round. Player 0 acts first.
-- Actions: 'p' (pass/check, or fold if facing a bet), 'b' (bet/call 1 chip).
-- Terminal histories: pp, bp, bb, pbp, pbb.
-- At showdown the higher card wins the pot.
+3 cards (J, Q, K, one each), 2 players, each antes 1 chip and gets 1
+card, single betting round, player 0 first. Actions are 'p' (pass -
+check, or fold if facing a bet) and 'b' (bet/call 1 chip). Terminal
+histories: pp, bp, bb, pbp, pbb. Higher card wins at showdown.
 
-This game has a known closed-form Nash equilibrium (up to one free
-parameter), and the game value for player 0 playing optimally against an
-optimal player 1 is exactly -1/18. Vanilla CFR self-play should converge
-to average strategies close to that equilibrium and a game value near
--1/18 -- this is the check that our CFR implementation is correct before
-building anything bigger on top of it.
+It has a known closed-form Nash equilibrium (up to one free parameter),
+and the game value for player 0 playing optimally is exactly -1/18.
+Vanilla CFR self-play should converge to strategies close to that
+equilibrium - which is exactly why this is a good first thing to run:
+if the CFR code is wrong, this is where it'll show up, before trusting
+it on anything bigger.
 """
 
 import random

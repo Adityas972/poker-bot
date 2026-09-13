@@ -1,27 +1,21 @@
 """Heads-up No-Limit Texas Hold'em hand state machine.
 
-Conventions
------------
-- Player 0 is the button/small blind, player 1 is the big blind. This
-  matches the standard heads-up rule: the button posts the small blind
-  and acts FIRST preflop, but acts LAST on every street after that
-  (i.e. the big blind acts first postflop).
-- Stacks reset to a fresh 100bb every hand (no persistent bankroll).
-- No side pots are needed: with only 2 players, once either stack hits 0
-  there are no more decisions possible for anyone, so the hand just runs
-  out the board to showdown.
-- Action abstraction: FOLD, CALL (check when nothing to call), BET_33 /
-  BET_75 / BET_150 (bet or raise sized as a fraction of the pot *after*
-  calling), ALLIN. Pot-fraction sizes are clamped to the legal min-raise
-  and to the acting player's stack, and deduplicated when two fractions
-  clamp to the same amount.
-- Raises per street are capped at MAX_RAISES_PER_STREET. Real casino
-  No-Limit rules have no such cap, but every practical poker-AI
-  abstraction (and commercial solvers like PioSolver) caps raise depth
-  per street -- without it, the betting tree is unbounded (a 100bb stack
-  supports many successive pot-sized re-raises before an all-in), which
-  makes exhaustive-action CFR traversal intractable regardless of card
-  abstraction.
+Player 0 is the button/small blind, player 1 the big blind - standard
+heads-up rule, so the button posts small and acts first preflop but
+last every street after. Stacks reset to 100bb each hand, no running
+bankroll. No side pots to worry about since it's just two players: once
+someone's stack hits 0 there's nothing left to decide, so the hand just
+runs out the board.
+
+Action abstraction is FOLD, CALL (doubles as check), and BET_33/75/150
++ ALLIN sized as a fraction of the pot after calling, clamped to the
+legal min-raise and the stack, with duplicate sizes collapsed.
+
+Raises per street are capped at MAX_RAISES_PER_STREET. Real casinos
+don't cap this, but pretty much every poker-AI abstraction does (same
+with commercial solvers) because otherwise the betting tree is
+unbounded - a 100bb stack supports a lot of pot-sized re-raises before
+someone's all in, and that blows up CFR regardless of card abstraction.
 """
 
 from dataclasses import dataclass, field

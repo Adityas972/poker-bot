@@ -1,35 +1,35 @@
 """Deep CFR (Brown, Lerer, Gross & Sandholm, 2019) on heads-up No-Limit
 Hold'em.
 
-Same CFR math as poker_bot.cfr.hunl_trainer's external-sampling MCCFR --
-the difference is entirely in *where the strategy comes from*. Tabular
-MCCFR looks up (and updates) one regret-table row per exact information
-set; that stops scaling once the number of information sets vastly
-exceeds the number of hands we can afford to play (see the README's
-Stage 4 notes -- 200k+ info sets after 3000 hands even with a coarse
-abstraction). Deep CFR instead trains a neural network to predict
-regret directly from a fixed-size feature vector, so information sets
-that are never visited still get sensible predictions by
-generalization from similar ones that were.
+Same CFR math as the tabular MCCFR trainer in poker_bot.cfr.hunl_trainer
+- the only real difference is where the strategy comes from. Tabular
+MCCFR keeps one regret-table row per exact information set, and that
+stops scaling once the number of info sets outgrows the number of
+hands you can actually afford to play (the tabular version blows past
+200k info sets after just 3000 hands, even with a coarse abstraction).
+Deep CFR trains a neural net to predict regret straight from a
+fixed-size feature vector instead, so info sets that never get visited
+still get a reasonable prediction by generalizing from similar ones
+that did.
 
-Algorithm (simplified Deep CFR, single-network-per-player variant):
+Roughly, the training loop looks like:
   for t in 1..num_cfr_iterations:
       for traverser in (0, 1):
-          run `traversals_per_player_per_iteration` external-sampling
-          traversals, using the CURRENT advantage networks (both
-          players') to pick strategies at every node. Traverser's own
-          nodes: explore all actions, compute regret, store
-          (features, regret_target, legal_mask, t) in that player's
-          advantage memory. Opponent nodes: sample one action, store
-          (features, strategy_target, legal_mask, t) in the shared
-          strategy memory.
-          retrain that player's advantage network from scratch on
-          its (reservoir-sampled) advantage memory.
-  train a policy network on the accumulated strategy memory -- this
-  is the final approximate-average-strategy network.
+          run a batch of external-sampling traversals, using the
+          current advantage networks (both players') to pick
+          strategies at every node. At the traverser's own nodes,
+          explore every action and compute regret, storing
+          (features, regret_target, legal_mask, t) into that player's
+          advantage memory. At the opponent's nodes, just sample one
+          action and store (features, strategy_target, legal_mask, t)
+          into the shared strategy memory.
+          retrain that player's advantage network from scratch on its
+          advantage memory.
+  finally train a policy network on the accumulated strategy memory -
+  that's the approximate average strategy we actually play with.
 
 Samples are weighted by iteration `t` (linear CFR weighting, as in the
-paper) so later, better-informed iterations count more.
+paper), so later, better-informed iterations count for more.
 """
 
 import copy

@@ -1,22 +1,24 @@
 """External-sampling Monte Carlo CFR (MCCFR) self-play on abstracted
 heads-up No-Limit Hold'em.
 
-Vanilla CFR (exhaustive game-tree traversal) is intractable here: even
-with hand-strength bucketing and a 6-action bet abstraction, No-Limit
-betting trees blow up combinatorially because a 100bb stack supports
-many successive pot-sized raises before either player is all-in, across
-4 streets. This is exactly why real poker AI (Libratus, Pluribus) uses
-Monte Carlo CFR instead of vanilla CFR for anything beyond toy games.
+Plain vanilla CFR (exploring the whole game tree) doesn't work here.
+Even with hand-strength bucketing and a 6-action bet abstraction,
+No-Limit betting trees blow up combinatorially - a 100bb stack supports
+a lot of successive pot-sized raises before someone's all-in, across 4
+streets. It's the same reason real poker AI (Libratus, Pluribus) uses
+Monte Carlo CFR instead of the vanilla version for anything past toy
+games.
 
-External sampling: for one sampled deal, the TRAVERSING player's own
-actions are all explored (full regret computation, like vanilla CFR),
-but the OPPONENT's actions are sampled from their current strategy --
-collapsing the opponent's raise-war branching to a single sampled path
-per iteration. Which player is "traversing" alternates every iteration
-so both players' regrets and average strategies get updated over time.
+External sampling works around it like this: for one sampled deal, the
+player whose turn it is to be "traversed" gets all their actions fully
+explored (full regret computation, same as vanilla CFR), but the
+opponent's actions just get sampled from their current strategy. That
+collapses the opponent's raise-war branching down to one sampled path
+per iteration. Which player is being traversed alternates every
+iteration so both sides' regrets and average strategies keep updating.
 
-Reference: Lanctot et al., "Monte Carlo Sampling for Regret Minimization
-in Extensive Games" (2009).
+Based on Lanctot et al.'s 2009 paper on Monte Carlo sampling for regret
+minimization in extensive games.
 """
 
 import copy

@@ -1,26 +1,24 @@
 """Hand-strength percentile bucketing: the card abstraction that makes
 CFR on full Hold'em tractable.
 
-Full heads-up No-Limit Hold'em has far too many distinct (hole cards,
-board) combinations for tabular CFR to hold one regret table entry per
-information set. The standard fix (used in early poker-AI abstraction
-research) is to replace exact cards with a coarse "hand strength bucket"
-computed from Monte Carlo equity: two hands with similar win probability
-are treated as strategically interchangeable and share one CFR table
-entry.
+There are just too many distinct (hole cards, board) combos in full
+heads-up No-Limit for tabular CFR to keep one regret-table entry per
+information set. The usual fix, going back to early poker-AI
+abstraction work, is to swap exact cards for a coarse "hand strength
+bucket" derived from Monte Carlo equity - hands with similar win
+probability get treated as interchangeable and share a table entry.
 
-Bucketing is done by PERCENTILE, not by fixed equity ranges: we sample
-many random hands per street, estimate each one's equity, and choose
-cutoffs so every bucket holds an equal share of the strength
-distribution. This matters because equity is not remotely uniformly
-distributed (most hands cluster in the middle), so fixed-width equity
-bins would waste most buckets on rarely-occurring equities.
+Buckets are built by percentile rather than fixed equity ranges: sample
+a lot of random hands per street, estimate their equity, and pick
+cutoffs so each bucket holds an equal slice of the distribution.
+Equity isn't uniformly spread out (most hands cluster in the middle),
+so fixed-width bins would waste most of your buckets on equities that
+barely ever come up.
 
-Note on performance: the defaults below are tuned for fast iteration
-(seconds, not minutes). Real CFR training in later stages should
-recalibrate with larger `num_calibration_samples` / `equity_rollouts`
-for more stable bucket boundaries and equity estimates -- this is a
-tuning knob, not a correctness concern.
+The defaults below are set for fast iteration - seconds, not minutes.
+For real training you'd want to bump up `num_calibration_samples` and
+`equity_rollouts` for steadier bucket boundaries and equity estimates;
+that's a tuning knob, not something that affects correctness.
 """
 
 import bisect
