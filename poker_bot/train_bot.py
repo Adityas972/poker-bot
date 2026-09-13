@@ -17,16 +17,25 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--quick", action="store_true",
                          help="fast, low-quality training run for smoke-testing the pipeline")
+    parser.add_argument("--big", action="store_true",
+                         help="larger, slower (~25-30 min) run for meaningfully stronger play")
     args = parser.parse_args()
 
     if args.quick:
         kwargs = dict(num_cfr_iterations=2, traversals_per_player_per_iteration=30,
                       advantage_train_steps=100, policy_train_steps=150,
-                      hidden_dim=32, equity_rollouts=20)
+                      hidden_dim=32, equity_rollouts=20,
+                      advantage_buffer_capacity=20000, strategy_buffer_capacity=20000)
+    elif args.big:
+        kwargs = dict(num_cfr_iterations=15, traversals_per_player_per_iteration=350,
+                      advantage_train_steps=500, policy_train_steps=800,
+                      hidden_dim=128, equity_rollouts=50,
+                      advantage_buffer_capacity=40000, strategy_buffer_capacity=40000)
     else:
         kwargs = dict(num_cfr_iterations=8, traversals_per_player_per_iteration=150,
                       advantage_train_steps=300, policy_train_steps=400,
-                      hidden_dim=64, equity_rollouts=40)
+                      hidden_dim=64, equity_rollouts=40,
+                      advantage_buffer_capacity=20000, strategy_buffer_capacity=20000)
 
     print(f"Training Deep CFR bot with {kwargs} ...")
     t0 = time.time()

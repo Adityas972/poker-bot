@@ -146,6 +146,8 @@ def train(num_cfr_iterations: int = 5, traversals_per_player_per_iteration: int 
           advantage_buffer_capacity: int = 20000, strategy_buffer_capacity: int = 20000,
           hidden_dim: int = 64, equity_rollouts: int = 50, seed: int = None,
           starting_stack_bb: int = 100, big_blind: int = 100):
+    if seed is not None:
+        torch.manual_seed(seed)  # network init/training is otherwise unseeded
     rng = random.Random(seed)
     advantage_nets = [InfosetMLP(hidden_dim), InfosetMLP(hidden_dim)]
     advantage_memory = [ReservoirBuffer(advantage_buffer_capacity, seed),
