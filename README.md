@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Adityas972/poker-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/Adityas972/poker-bot/actions/workflows/ci.yml)
 
-**Play it live:** _deploying — link goes here_
+**Play it live:** https://poker-bot-ws67.onrender.com (free tier — first load after idle can take ~30s to spin up)
 
 A heads-up No-Limit Hold'em bot built from scratch in Python. Core solver is Counterfactual Regret Minimization (CFR), starting tabular and moving to Deep CFR once the info-set count got out of hand. Comes with a CLI and a small local web UI so you can actually play against it.
 
