@@ -14,10 +14,10 @@ def client(monkeypatch):
     # reload check entirely (that's exercised separately below).
     fake_net = InfosetMLP(hidden_dim=8)
     monkeypatch.setattr(web_app, "_get_policy_net", lambda: fake_net)
-    monkeypatch.setattr(web_app, "_state", None)
-    monkeypatch.setattr(web_app, "_session_net", [0, 0])
     web_app.app.config["TESTING"] = True
     with web_app.app.test_client() as c:
+        # Each test client gets its own cookie jar, so the first request
+        # below allocates a fresh, isolated SessionState automatically.
         yield c
 
 

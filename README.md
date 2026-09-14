@@ -1,5 +1,9 @@
 # poker-bot
 
+[![CI](https://github.com/Adityas972/poker-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/Adityas972/poker-bot/actions/workflows/ci.yml)
+
+**Play it live:** _deploying — link goes here_
+
 A heads-up No-Limit Hold'em bot built from scratch in Python. Core solver is Counterfactual Regret Minimization (CFR), starting tabular and moving to Deep CFR once the info-set count got out of hand. Comes with a CLI and a small local web UI so you can actually play against it.
 
 ## What's in here
@@ -42,6 +46,32 @@ python3 -m poker_bot.web.app     # browser, then open http://127.0.0.1:5050
 python3 -m pytest            # fast suite
 python3 -m pytest --runslow  # also runs the exhaustive hand-evaluator check (~8s)
 ```
+
+## Deploying
+
+The web UI is stateful per browser session (each visitor gets their own
+in-memory hand, keyed by a signed session cookie — see
+`poker_bot/web/app.py`), Dockerized, and set up for [Render](https://render.com):
+
+```bash
+docker build -t poker-bot .
+docker run -p 5050:5050 -e SECRET_KEY=dev poker-bot
+```
+
+The image fetches a pretrained model from a GitHub Release at build time
+(`Dockerfile`'s `MODEL_URL` build arg) rather than training one on every
+build. To publish a new one after retraining:
+
+```bash
+python3 -m poker_bot.train_bot --big
+gh release create model-v1 poker_bot/models/policy_net.pt --title "policy_net v1"
+```
+
+`render.yaml` points a Render web service at the `Dockerfile` and
+generates a `SECRET_KEY` env var automatically. Because game state lives
+in one process's memory, the service must run a single instance/worker
+(see the `-w 1` note in the `Dockerfile`) — fine for a low-traffic demo,
+not meant to scale past that without moving session storage to Redis.
 
 ## Layout
 
